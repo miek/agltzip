@@ -26,7 +26,7 @@ unsigned CBitReader::get(unsigned numbits)
       #ifndef NDEBUG
       puts("BitReader: get(): offset>=len");
       #endif
-       throw OutOfBounds();
+      throw OutOfBounds();
     }
     data_read = (data_read<<8) | buf[offset];
     bits_read+=8;
