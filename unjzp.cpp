@@ -94,7 +94,7 @@ int decompress( const void *inbuf, const unsigned inlen, void *outbuf)
           	puts("Out of bounds !");
         }
   	
-  	if (in->empty() && out->full())
+  	if (in->byte_empty() && out->full())
   	{
   		puts("LZSS: OK");
 	}

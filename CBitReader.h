@@ -11,7 +11,8 @@ class CBitReader
 public:
   CBitReader(const void *_buf, const unsigned _len);
   unsigned get(unsigned numbits);
-  bool empty() const;
+  bool empty() const; //strict empty (no more bits)
+  bool byte_empty() const; //no more bytes
   unsigned used() const { return offset; }
   bool is_all_zeroes() const;
 };

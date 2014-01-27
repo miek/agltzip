@@ -43,6 +43,11 @@ bool CBitReader::empty() const
   return ((bits_read==0) && (offset>=len));
 }
 
+bool CBitReader::byte_empty() const
+{
+  return (offset>=len);
+}
+
 bool CBitReader::is_all_zeroes() const
 {
   for(unsigned i = offset; i<len; i++)
