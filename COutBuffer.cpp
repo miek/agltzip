@@ -2,11 +2,12 @@
 #include <string.h>
 #include "COutBuffer.h"
 
-COutBuffer::COutBuffer(void *_buf, unsigned _len)
+COutBuffer::COutBuffer(void *_buf, unsigned _len, unsigned _winsize)
 {
   buf = static_cast<unsigned char *>(_buf);
   len = _len;
   offset = 0;
+  window_size = _winsize;
 }
 
 void COutBuffer::put(const unsigned char b)
@@ -19,26 +20,15 @@ void COutBuffer::put(const unsigned char b)
      		throw Overflow();
 	}
   	buf[offset++] = b;
-  //std::printf("--- put %04X\n", w);
 }
 
-void COutBuffer::put(const unsigned char *src, const unsigned size)
+void COutBuffer::repeat(const unsigned short dist, const unsigned char size)
 {
   	if (offset>=len)
-  	{
-  		#ifndef NDEBUG
-  		printf("put(src,%X) overflow: offset=%X, len=%X\n", size, offset, len);
-  		#endif
      		throw Overflow();
-	}
-  	if ((offset+size)>len)
-  	{
-  		#ifndef NDEBUG
-  		printf("put(src,%X) out of bounds: offset=%X, len=%X\n", size, offset, len);
-  		#endif
-     		throw OutOfBounds();
-	}
-	memcpy(buf+offset, src, size);  	
+  	if (dist>=offset)
+     		throw NegativeDistanse();
+	memcpy(buf+offset, buf+((offset>=window_size) ? (offset+dist-window_size) : dist), size);  	
   	offset+=size;
 }
 

@@ -3,15 +3,17 @@
 
 class COutBuffer
 {
-  unsigned char *buf;
-  unsigned len;
-  unsigned offset;
+	unsigned char *buf;
+        unsigned len;
+        unsigned offset;
+        unsigned window_size;
+        void adjust_dict();
 public:
-  COutBuffer(void *_buf, unsigned _len);
-  void put(const unsigned char);
-  void put(const unsigned char *, const unsigned);
-  bool full() const;
-  unsigned used() const { return offset; }
+        COutBuffer(void *_buf, unsigned _len, unsigned _maxdist);
+        void put(const unsigned char);
+      	void repeat(const unsigned short dist, const unsigned char size);
+        bool full() const;
+        unsigned used() const { return offset; }
 };
 
 #include "errors.h"
