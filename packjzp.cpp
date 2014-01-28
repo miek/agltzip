@@ -21,34 +21,31 @@ unsigned compress( const void *inbuf, const unsigned inlen, void *outbuf, const 
 
   	try 
   	{
-  		for(offset=0; offset<MIN(inlen, min_repeat_size); offset++)
-  		{
-  			out->put(1, 1);
-        		out->put(in[offset], 8);
-  		}
-		
   		while(offset<inlen)
   		{
   			unsigned dict_start = (offset<dist_max) ? 0 : (offset-dist_max);
   			unsigned max_size = 0, max_pos=0;
-  			unsigned max_d = offset-dict_start-min_repeat_size;
-  			for(unsigned dist=0; dist<max_d; dist++)
+  			if (!(((inlen-offset)<min_repeat_size) || (offset<min_repeat_size))) //early start or late end -> do literals w/o estimation
   			{
-  				const unsigned char *ip = in+offset;
-  				const unsigned char *ref = in+dict_start+dist;
-  				unsigned max_l = MIN(MIN(size_max, inlen-offset), offset-dict_start-dist);
-  				unsigned l;
-  				for(l=0; l<max_l; l++)
-  				{
-  					if (*ref++!=*ip++) break;
-  				}
-  				if (l>max_size)
-  				{
-  					max_size = l;
-  					max_pos = dist;
-  					if (l==size_max) //best case found already, no need to continue
-  						break;
-  				}
+  				unsigned max_d = offset-dict_start-min_repeat_size+1;
+          			for(unsigned dist=0; dist<max_d; dist++)
+          			{
+          				const unsigned char *ip = in+offset;
+          				const unsigned char *ref = in+dict_start+dist;
+          				unsigned max_l = MIN(MIN(size_max, inlen-offset), offset-dict_start-dist);
+          				unsigned l;
+          				for(l=0; l<max_l; l++)
+          				{
+          					if (*ref++!=*ip++) break;
+          				}
+          				if (l>max_size)
+          				{
+          					max_size = l;
+          					max_pos = dist;
+          					if (l==size_max) //best case found already, no need to continue
+          						break;
+          				}
+                		}
         		}
 
         		if (max_size>=min_repeat_size)
@@ -101,9 +98,9 @@ unsigned compress( const void *inbuf, const unsigned inlen, void *outbuf, const 
 
 void main(int argc, char *argv[])
 {
-	if (argc!=3)
+	if ((argc!=3) && (argc!=4))
   	{
-    		printf("Usage: %s <in.bin> <out.jzp>\n", argv[0]);
+    		printf("Usage: %s <in.bin> <out.jzp> [revision.txt]\n", argv[0]);
     		return;
   	}
 
@@ -111,7 +108,7 @@ void main(int argc, char *argv[])
   	unsigned char *inbuf = LoadBinFile(argv[1], &insize);
   	if (!inbuf)
   	{
-    		puts("Can't open input file !");
+    		puts("Can't load input file !");
     		return;
   	}
 
@@ -122,11 +119,35 @@ void main(int argc, char *argv[])
   	JZPHDR *hdr = (JZPHDR *)outbuf;
   	hdr->decomp_size = swapl(insize);
   	hdr->decomp_checksum = jzp_checksum(inbuf, insize);
-	strncpy(hdr->revision, "@(#)REV: 02.25 Jun  1 2010 08:53:37", 128);    	
+  	if (argc==4)
+  	{
+  		unsigned revsize;
+  		char *rev = (char *)LoadBinFile(argv[3], &revsize);
+  		if (!rev)
+  		{
+  			puts("Can't load revision file !");
+  			delete outbuf;
+  			delete inbuf;
+  			return;
+		}
+		if (revsize>128)
+		{
+			puts("Revision file is too big !");
+			delete rev;
+  			delete outbuf;
+  			delete inbuf;
+  			return;
+		}
+		strncpy(hdr->revision, rev, 128);
+		delete rev;
+  	}
+	else
+		strncpy(hdr->revision, "@(#)REV: 06.16.0001 Apr 27 2011 15:25:28", 128);    	//default revision
 	strncpy(hdr->magic, "AGLTZIP", 8);
 	hdr->dist_width = DIST_WIDTH;
 	hdr->size_width = (SIZE_WIDTH<<4) | MIN_REPEAT;
 
+	puts("Compressing...");
 	unsigned comp_size = compress(inbuf, insize, outbuf+sizeof(JZPHDR), outsize, DIST_WIDTH, SIZE_WIDTH, MIN_REPEAT);
     	if (comp_size==0)
     	{

@@ -9,11 +9,6 @@
 int decompress( const void *inbuf, const unsigned inlen, void *outbuf)
 {
 	const JZPHDR *hdr = static_cast<const JZPHDR *>(inbuf);
-	if (strncmp(hdr->magic, "AGLTZIP", 8))
-	{
-		puts("Not a JZP !");
-		return 0;
-	}
   	if (hdr->decomp_size==0)
      		return 0;
   	
@@ -34,12 +29,14 @@ int decompress( const void *inbuf, const unsigned inlen, void *outbuf)
     			if (in->get(1)==1)
     			{ 
     				unsigned char lit = in->get(8);
+    				//printf("lit %02X\n", lit);
 				out->put(lit);
 			}
         		else
         		{ 
         			unsigned short dist = in->get(dist_width);
         			unsigned char size = in->get(size_width)+min_size;
+        			//printf("repeat %04X[%02X]\n", dist, size);
         			out->repeat(dist, size);
         		}
           	}
@@ -84,9 +81,9 @@ int decompress( const void *inbuf, const unsigned inlen, void *outbuf)
 
 void main(int argc, char *argv[])
 {
-	if (argc!=3)
+	if ((argc!=3) && (argc!=4))
   	{
-    		printf("Usage: %s <in.jzp> <out.bin>\n", argv[0]);
+    		printf("Usage: %s <in.jzp> <out.bin> [out_rev.txt]\n", argv[0]);
     		return;
   	}
 
@@ -99,16 +96,34 @@ void main(int argc, char *argv[])
   	}
 
   	const JZPHDR *hdr = (const JZPHDR *)inbuf;
+	if (strncmp(hdr->magic, "AGLTZIP", 8))
+	{
+		puts("Not a JZP !");
+		delete inbuf;
+		return;
+	}
+  	unsigned ck = jzp_checksum(inbuf, swapl(hdr->comp_size));
+  	if (ck!=0)
+  	{
+  		puts("Checksum error ! Input file is corrupt !");
+		delete inbuf;
+		return;
+	}
+	puts(hdr->revision);
+	if (argc==4) //save revision
+	{
+		SaveBinFile(argv[3], hdr->revision, strlen(hdr->revision));
+	}
 	unsigned decomp_size = swapl(hdr->decomp_size);
-
   	unsigned char *outbuf = new unsigned char[decomp_size];
     	
+    	puts("Decompressing...");
     	if (decompress(inbuf, insize, outbuf)!=decomp_size)
     	{
     		puts("Decompression error !");
 	}
   	
-  	unsigned ck = jzp_checksum(outbuf, decomp_size);
+  	ck = jzp_checksum(outbuf, decomp_size);
   	if (ck==hdr->decomp_checksum)
   	{
   		puts("CHECKSUM: OK");
