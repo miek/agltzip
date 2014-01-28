@@ -138,7 +138,7 @@ void main(int argc, char *argv[])
   			delete inbuf;
   			return;
 		}
-		strncpy(hdr->revision, rev, 128);
+		strncpy(hdr->revision, rev, revsize);
 		delete rev;
   	}
 	else
