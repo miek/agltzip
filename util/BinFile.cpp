@@ -1,36 +1,23 @@
-#include <io.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <fstream>
 
 unsigned char *LoadBinFile(const char *fname, unsigned *size)
 {
-	*size = 0;
-	int hf = open(fname, O_RDONLY | O_BINARY);
-	if (hf<0)
-		return 0;
-	*size = filelength(hf);
-	unsigned char *buf = new unsigned char[*size];
-	if (read(hf, buf, *size)!=*size)
+	std::ifstream file(fname, std::ios::binary | std::ios::ate);
+	std::streamsize s = file.tellg();
+	file.seekg(0, std::ios::beg);
+
+	char *buf = new char[s];
+	if (file.read(buf, s))
 	{
-		delete buf;
-		*size = 0;
-		close(hf);
-		return 0;
+		*size = s;
+		return (unsigned char*)buf;
 	}
-	close(hf);
-	return buf;
+	delete buf;
+	return 0;
 }
 
 bool SaveBinFile(const char *fname, const void *data, unsigned size)
 {
-	int hf = open(fname, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, S_IWRITE);
-	if (hf<0)
-		return false;
-	if (write(hf, data, size)!=size)
-	{
-		close(hf);
-		return false;
-	}
-	close(hf);
-	return true;
+	std::ofstream file(fname, std::ios::binary | std::ios::trunc);
+	file.write((const char*)data, size);
 }

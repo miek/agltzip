@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <xutility>
 #include <string.h>
 #include <util/BinFile.h>
 #include "jzp.h"
@@ -96,12 +95,12 @@ unsigned compress( const void *inbuf, const unsigned inlen, void *outbuf, const 
 #define SIZE_WIDTH 5
 #define MIN_REPEAT 3
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	if ((argc!=3) && (argc!=4))
   	{
     		printf("Usage: %s <in.bin> <out.jzp> [revision.txt]\n", argv[0]);
-    		return;
+    		return 1;
   	}
 
   	unsigned insize;
@@ -109,7 +108,7 @@ void main(int argc, char *argv[])
   	if (!inbuf)
   	{
     		puts("Can't load input file !");
-    		return;
+    		return 1;
   	}
 
   	unsigned outsize = insize/8*9+16; //should be enough in worst case (each byte stored as 9-bit "store literal" op)
@@ -128,7 +127,7 @@ void main(int argc, char *argv[])
   			puts("Can't load revision file !");
   			delete outbuf;
   			delete inbuf;
-  			return;
+  			return 1;
 		}
 		if (revsize>128)
 		{
@@ -136,7 +135,7 @@ void main(int argc, char *argv[])
 			delete rev;
   			delete outbuf;
   			delete inbuf;
-  			return;
+  			return 1;
 		}
 		strncpy(hdr->revision, rev, revsize);
 		delete rev;
@@ -154,7 +153,7 @@ void main(int argc, char *argv[])
     		puts("Compression error !");
     		delete outbuf;
     		delete inbuf;
-    		return;
+    		return 1;
 	}
 
   	comp_size+=sizeof(JZPHDR);
