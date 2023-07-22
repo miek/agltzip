@@ -20,4 +20,6 @@ bool SaveBinFile(const char *fname, const void *data, unsigned size)
 {
 	std::ofstream file(fname, std::ios::binary | std::ios::trunc);
 	file.write((const char*)data, size);
+	file.flush();
+	return file.bad();
 }

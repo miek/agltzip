@@ -67,7 +67,7 @@ int decompress( const void *inbuf, const unsigned inlen, void *outbuf)
   		if (in->empty())
      			puts("  IN is empty");
   		else
-     			printf("  IN used %X of %X\n", in->used(), swapl(hdr->comp_size) - sizeof(JZPHDR));
+     			printf("  IN used %X of %lu\n", in->used(), swapl(hdr->comp_size) - sizeof(JZPHDR));
   		if (out->full())
      			puts("  OUT is full");
   		else
